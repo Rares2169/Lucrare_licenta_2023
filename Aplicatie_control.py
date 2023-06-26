@@ -7,6 +7,7 @@ import struct
 curent_prag = float(input("Introduceti de la tastatura valoarea pentru curentul de prag [A]: "))
 tensiune_prag = float(input("Introduceti de la tastatura valoarea pentru tensiunea de prag [V]: "))
 numar_cicluri = int(input("Introduceti de la tastatura numarul de cicluri de testare dorit: "))
+curent_inc_desc = float(input("Introduceti de la tastatura valoarea pentru curentul de incarcare-descărcare [A]: "))
 
 # Crearea fișierului CSV și scrierea headerului
 csv_file = open('masuratori.csv', 'w', newline='')
@@ -33,6 +34,7 @@ try:
     ser.write(struct.pack('f', curent_prag))
     ser.write(struct.pack('f', tensiune_prag))
     ser.write(struct.pack('i', numar_cicluri))
+    ser.write(struct.pack('f', curent_inc_desc))
 
     # Buclea principală pentru citirea și procesarea datelor
     while True:
