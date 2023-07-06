@@ -44,6 +44,11 @@ void spiWrite(uint8_t data) {
   UCB0TXBUF = data;             // Write data to TX buffer
 }
 
+unsigned char receiveByte() {
+  while (!(IFG2 & UCA0RXIFG)); // Wait until byte is received
+  return UCA0RXBUF; // Return received byte
+}
+
 void setResistance(uint16_t resistance) {
   uint8_t highByte = (resistance >> 8) & 0xFF; // Extract high byte of resistance
   uint8_t lowByte = resistance & 0xFF; // Extract low byte of resistance
@@ -53,6 +58,17 @@ void setResistance(uint16_t resistance) {
   spiWrite(MCP_WRITE_CMD);     // Send write command
   spiWrite(highByte);          // Send high byte of resistance
   spiWrite(lowByte);           // Send low byte of resistance
+
+  P1OUT |= MCP_SS_PIN;         // Deselect MCP4251 (pull SS pin high)
+}
+
+void setWiper(float x) {
+  uint8_t position = (uint8_t)(5 - x) * 51; //R_WB / R_AW = 1 / (5-x) and *51 for scaling to max 255
+
+  P1OUT &= ~MCP_SS_PIN;        // Select MCP4251 (pull SS pin low)
+
+  spiWrite(MCP_WRITE_CMD);     // Send write command
+  spiWrite(position);          // Send wiper position
 
   P1OUT |= MCP_SS_PIN;         // Deselect MCP4251 (pull SS pin high)
 }
@@ -71,6 +87,7 @@ void discharge(float current_d) {
     P2OUT |= BIT0; //charge_disable = 1
     P2DIR |= BIT1; //change_state
     P2OUT &= ~BIT1; //change_state = 0
+    setWiper(current_d); //setting wiper position
 }
 
 void sendNumber(int number) {
@@ -151,19 +168,19 @@ int main(void)
 	       float curent_prag = receiveFloat();
 	       float tensiune_prag = receiveFloat();
 	       int iterations = receiveInt();
-	       float curent_set = receiveFloat();
+	       float current_set = receiveFloat();
 
 	       while (iterations > 0) {
 	         int voltage = readVoltage();
 	         int current = readCurrent();
 
 	         if (voltage <= tensiune_prag) {
-	           charge(curent_set);
+	           charge(current_set);
 	           voltage = readVoltage();
 	           current = readCurrent();
 	           }
 	         } else if (voltage > tensiune_prag) {
-	           discharge(curent_set);
+	           discharge(current_set);
 	           voltage = readVoltage();
 	           current = readCurrent();
 	         }
